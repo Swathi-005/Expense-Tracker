@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
@@ -18,13 +18,16 @@ st.set_page_config(
 
 
 # ============================================================
-# CUSTOM CSS
+# RESPONSIVE + DARK MODE CSS
 # ============================================================
 
 st.markdown("""
 <style>
+
+/* Base */
 .stApp {
-    background-color: #F5F7FB;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 .block-container {
@@ -32,38 +35,78 @@ st.markdown("""
     padding-bottom: 2rem;
 }
 
+/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: #1E293B;
 }
 
-[data-testid="stSidebar"] * {
-    color: white !important;
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] div {
+    color: #FFFFFF !important;
 }
 
+/* Titles */
 .main-title {
     font-size: 38px;
     font-weight: 700;
-    color: #1E293B;
+    color: var(--text-color);
     margin-bottom: 5px;
 }
 
 .subtitle {
-    color: #64748B;
+    color: var(--text-color);
+    opacity: 0.75;
     font-size: 16px;
     margin-bottom: 20px;
 }
 
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/* Login */
+.login-box {
+    background-color: var(--secondary-background-color);
+    padding: 35px;
+    border-radius: 20px;
+    border: 1px solid rgba(128,128,128,0.30);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    text-align: center;
+}
+
+.login-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.login-subtitle {
+    font-size: 16px;
+    color: var(--text-color);
+    opacity: 0.75;
+    margin-top: 10px;
+}
+
+/* Dashboard cards */
 .metric-card {
-    background-color: white;
+    background-color: var(--secondary-background-color);
     padding: 22px;
     border-radius: 16px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+    border: 1px solid rgba(128,128,128,0.30);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     min-height: 110px;
 }
 
 .metric-title {
-    color: #64748B;
+    color: var(--text-color);
+    opacity: 0.75;
     font-size: 15px;
     margin-bottom: 8px;
 }
@@ -73,40 +116,106 @@ st.markdown("""
     font-weight: 700;
 }
 
-.login-box {
-    background-color: white;
-    padding: 35px;
-    border-radius: 20px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    text-align: center;
+/* Inputs */
+[data-testid="stWidgetLabel"] p {
+    color: var(--text-color) !important;
 }
 
-.login-title {
-    font-size: 42px;
+input,
+textarea {
+    color: var(--text-color) !important;
+}
+
+[data-baseweb="select"] * {
+    color: var(--text-color) !important;
+}
+
+button[data-baseweb="tab"] {
+    color: var(--text-color) !important;
+}
+
+[data-testid="stMetricLabel"],
+[data-testid="stMetricValue"] {
+    color: var(--text-color) !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-color: rgba(128,128,128,0.30) !important;
+}
+
+/* Expense card */
+.expense-card-title {
+    font-size: 18px;
     font-weight: 700;
-    color: #1E293B;
+    color: var(--text-color);
+    margin-bottom: 10px;
 }
 
-.login-subtitle {
+.expense-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.expense-label {
+    opacity: 0.65;
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+.expense-value {
+    font-weight: 700;
     font-size: 16px;
-    color: #64748B;
-    margin-top: 10px;
+    color: var(--text-color);
 }
 
-.section-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1E293B;
+/* Buttons */
+.stButton > button {
+    border-radius: 8px;
 }
 
-.small-text {
-    color: #64748B;
-    font-size: 14px;
+hr {
+    border-color: rgba(128,128,128,0.25);
 }
 
-button {
-    border-radius: 8px !important;
+/* Mobile */
+@media (max-width: 768px) {
+
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .main-title {
+        font-size: 28px;
+    }
+
+    .section-title {
+        font-size: 20px;
+    }
+
+    .login-title {
+        font-size: 30px;
+    }
+
+    .login-box {
+        padding: 22px;
+    }
+
+    .metric-card {
+        padding: 16px;
+        min-height: 90px;
+    }
+
+    .metric-value {
+        font-size: 22px;
+    }
+
+    .expense-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
 }
 
 </style>
@@ -114,7 +223,7 @@ button {
 
 
 # ============================================================
-# SUPABASE CONNECTION
+# SUPABASE
 # ============================================================
 
 @st.cache_resource
@@ -150,7 +259,7 @@ if "editing_expense" not in st.session_state:
 
 
 # ============================================================
-# AUTHENTICATED CLIENT
+# AUTH CLIENT
 # ============================================================
 
 def get_authenticated_client():
@@ -170,29 +279,23 @@ def get_authenticated_client():
             )
 
         except Exception:
-
             return None
 
     return client
 
 
 # ============================================================
-# AUTHENTICATION PAGE
+# AUTH PAGE
 # ============================================================
 
 def authentication_page():
 
     st.write("")
     st.write("")
-    st.write("")
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    left, center, right = st.columns([1, 2, 1])
 
-    with col2:
-
-        # IMPORTANT:
-        # No blank lines inside the HTML block.
-        # This prevents HTML from appearing as text.
+    with center:
 
         st.markdown(
             '<div class="login-box">'
@@ -209,11 +312,6 @@ def authentication_page():
         login_tab, signup_tab = st.tabs(
             ["🔐 Login", "📝 Create Account"]
         )
-
-
-        # ====================================================
-        # LOGIN
-        # ====================================================
 
         with login_tab:
 
@@ -232,12 +330,10 @@ def authentication_page():
                 key="login_password"
             )
 
-            st.write("")
-
             if st.button(
                 "🔑 Login",
-                use_container_width=True,
-                type="primary"
+                type="primary",
+                use_container_width=True
             ):
 
                 if not email or not password:
@@ -263,28 +359,19 @@ def authentication_page():
                         if response.user and response.session:
 
                             st.session_state.user = response.user
-
                             st.session_state.access_token = (
                                 response.session.access_token
                             )
-
                             st.session_state.refresh_token = (
                                 response.session.refresh_token
                             )
-
                             st.session_state.page = "Dashboard"
-
-                            st.success(
-                                "Login successful!"
-                            )
 
                             st.rerun()
 
                         else:
 
-                            st.error(
-                                "Login failed."
-                            )
+                            st.error("Login failed.")
 
                     except Exception as e:
 
@@ -292,14 +379,12 @@ def authentication_page():
                             f"Login failed: {str(e)}"
                         )
 
-
             st.markdown("---")
 
             st.subheader("Forgot Password?")
 
             reset_email = st.text_input(
                 "Enter your email",
-                placeholder="example@gmail.com",
                 key="reset_email"
             )
 
@@ -323,20 +408,14 @@ def authentication_page():
                         )
 
                         st.success(
-                            "Password reset email sent. "
-                            "Please check your inbox."
+                            "Password reset email sent."
                         )
 
                     except Exception as e:
 
                         st.error(
-                            f"Could not send email: {str(e)}"
+                            f"Could not send reset email: {str(e)}"
                         )
-
-
-        # ====================================================
-        # CREATE ACCOUNT
-        # ====================================================
 
         with signup_tab:
 
@@ -344,36 +423,30 @@ def authentication_page():
 
             name = st.text_input(
                 "Full Name",
-                placeholder="Enter your name",
                 key="signup_name"
             )
 
             signup_email = st.text_input(
                 "Email Address",
-                placeholder="example@gmail.com",
                 key="signup_email"
             )
 
             signup_password = st.text_input(
                 "Password",
                 type="password",
-                placeholder="Minimum 6 characters",
                 key="signup_password"
             )
 
             confirm_password = st.text_input(
                 "Confirm Password",
                 type="password",
-                placeholder="Re-enter your password",
                 key="signup_confirm"
             )
 
-            st.write("")
-
             if st.button(
                 "📝 Create Account",
-                use_container_width=True,
-                type="primary"
+                type="primary",
+                use_container_width=True
             ):
 
                 if not name:
@@ -391,7 +464,7 @@ def authentication_page():
                 elif len(signup_password) < 6:
 
                     st.warning(
-                        "Password must contain at least 6 characters."
+                        "Password must be at least 6 characters."
                     )
 
                 elif signup_password != confirm_password:
@@ -423,42 +496,24 @@ def authentication_page():
 
                             if response.session:
 
-                                st.session_state.user = (
-                                    response.user
-                                )
-
+                                st.session_state.user = response.user
                                 st.session_state.access_token = (
                                     response.session.access_token
                                 )
-
                                 st.session_state.refresh_token = (
                                     response.session.refresh_token
                                 )
 
                                 st.session_state.page = "Dashboard"
 
-                                st.success(
-                                    "Account created successfully!"
-                                )
-
                                 st.rerun()
 
                             else:
 
                                 st.success(
-                                    "Account created successfully!"
+                                    "Account created. "
+                                    "Check your email to confirm your account."
                                 )
-
-                                st.info(
-                                    "Please check your email and "
-                                    "confirm your account before logging in."
-                                )
-
-                        else:
-
-                            st.error(
-                                "Account could not be created."
-                            )
 
                     except Exception as e:
 
@@ -468,7 +523,7 @@ def authentication_page():
 
 
 # ============================================================
-# CHECK LOGIN
+# LOGIN CHECK
 # ============================================================
 
 if (
@@ -477,13 +532,8 @@ if (
 ):
 
     authentication_page()
-
     st.stop()
 
-
-# ============================================================
-# GET AUTHENTICATED CLIENT
-# ============================================================
 
 supabase = get_authenticated_client()
 
@@ -498,17 +548,15 @@ if supabase is None:
 
 
 # ============================================================
-# GET CURRENT USER
+# USER
 # ============================================================
 
 try:
 
     user_response = supabase.auth.get_user()
-
     current_user = user_response.user
 
     if current_user is None:
-
         raise Exception("Session expired.")
 
     st.session_state.user = current_user
@@ -522,20 +570,15 @@ except Exception:
     st.rerun()
 
 
-# ============================================================
-# USER INFORMATION
-# ============================================================
-
 user_id = st.session_state.user.id
-
 user_email = st.session_state.user.email
 
-user_metadata = (
+metadata = (
     st.session_state.user.user_metadata
     or {}
 )
 
-user_name = user_metadata.get(
+user_name = metadata.get(
     "full_name",
     "User"
 )
@@ -554,10 +597,7 @@ def get_expenses():
             "id, amount, category, description, expense_date, created_at"
         )
         .eq("user_id", user_id)
-        .order(
-            "id",
-            desc=True
-        )
+        .order("id", desc=True)
         .execute()
     )
 
@@ -586,18 +626,18 @@ def add_expense(
     expense_date
 ):
 
-    data = {
-        "user_id": user_id,
-        "amount": float(amount),
-        "category": category,
-        "description": description,
-        "expense_date": str(expense_date)
-    }
-
     (
         supabase
         .table("expenses")
-        .insert(data)
+        .insert(
+            {
+                "user_id": user_id,
+                "amount": float(amount),
+                "category": category,
+                "description": description,
+                "expense_date": str(expense_date)
+            }
+        )
         .execute()
     )
 
@@ -610,17 +650,17 @@ def update_expense(
     expense_date
 ):
 
-    data = {
-        "amount": float(amount),
-        "category": category,
-        "description": description,
-        "expense_date": str(expense_date)
-    }
-
     (
         supabase
         .table("expenses")
-        .update(data)
+        .update(
+            {
+                "amount": float(amount),
+                "category": category,
+                "description": description,
+                "expense_date": str(expense_date)
+            }
+        )
         .eq("id", expense_id)
         .eq("user_id", user_id)
         .execute()
@@ -648,18 +688,17 @@ with st.sidebar:
     st.markdown(
         """
         <div style="text-align:center;">
-            <div style="font-size:32px;font-weight:700;">
-                💰 Expense
-            </div>
-            <div style="font-size:32px;font-weight:700;">
-                Tracker
+            <div style="
+                font-size:30px;
+                font-weight:700;
+                color:white;
+            ">
+                💰 Expense Tracker
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
-
-    st.write("")
 
     st.markdown("---")
 
@@ -667,12 +706,9 @@ with st.sidebar:
         f"👋 Hello, **{user_name}**"
     )
 
-    st.caption(
-        user_email
-    )
+    st.caption(user_email)
 
     st.markdown("---")
-
 
     if st.button(
         "🏠 Dashboard",
@@ -682,7 +718,6 @@ with st.sidebar:
         st.session_state.page = "Dashboard"
         st.rerun()
 
-
     if st.button(
         "💳 Expenses",
         use_container_width=True
@@ -690,7 +725,6 @@ with st.sidebar:
 
         st.session_state.page = "Expenses"
         st.rerun()
-
 
     if st.button(
         "📊 Reports",
@@ -700,9 +734,7 @@ with st.sidebar:
         st.session_state.page = "Reports"
         st.rerun()
 
-
     st.markdown("---")
-
 
     if st.button(
         "🚪 Logout",
@@ -710,11 +742,8 @@ with st.sidebar:
     ):
 
         try:
-
             supabase.auth.sign_out()
-
-        except:
-
+        except Exception:
             pass
 
         st.session_state.access_token = None
@@ -726,7 +755,7 @@ with st.sidebar:
 
 
 # ============================================================
-# DASHBOARD PAGE
+# DASHBOARD
 # ============================================================
 
 def dashboard_page():
@@ -739,38 +768,29 @@ def dashboard_page():
     )
 
     st.markdown(
-        f'<div class="subtitle">Welcome back, {user_name} 👋</div>',
+        f'<div class="subtitle">'
+        f'Welcome back, {user_name} 👋'
+        f'</div>',
         unsafe_allow_html=True
     )
 
-    st.write("")
-
-
     if len(df) > 0:
 
-        total = df["amount"].astype(float).sum()
+        df["amount"] = df["amount"].astype(float)
 
-        transaction_count = len(df)
-
-        average = total / transaction_count
+        total = df["amount"].sum()
+        count = len(df)
+        average = total / count
 
     else:
 
         total = 0
-
-        transaction_count = 0
-
+        count = 0
         average = 0
 
+    c1, c2, c3 = st.columns(3)
 
-    # ========================================================
-    # METRIC CARDS
-    # ========================================================
-
-    col1, col2, col3 = st.columns(3)
-
-
-    with col1:
+    with c1:
 
         st.markdown(
             f"""
@@ -779,7 +799,7 @@ def dashboard_page():
                     💰 Total Expenses
                 </div>
                 <div class="metric-value"
-                     style="color:#16A34A;">
+                style="color:#22C55E;">
                     ₹{total:,.2f}
                 </div>
             </div>
@@ -787,8 +807,7 @@ def dashboard_page():
             unsafe_allow_html=True
         )
 
-
-    with col2:
+    with c2:
 
         st.markdown(
             f"""
@@ -797,16 +816,15 @@ def dashboard_page():
                     🧾 Transactions
                 </div>
                 <div class="metric-value"
-                     style="color:#2563EB;">
-                    {transaction_count}
+                style="color:#3B82F6;">
+                    {count}
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-
-    with col3:
+    with c3:
 
         st.markdown(
             f"""
@@ -815,7 +833,7 @@ def dashboard_page():
                     📈 Average Expense
                 </div>
                 <div class="metric-value"
-                     style="color:#7C3AED;">
+                style="color:#A855F7;">
                     ₹{average:,.2f}
                 </div>
             </div>
@@ -823,14 +841,8 @@ def dashboard_page():
             unsafe_allow_html=True
         )
 
-
     st.write("")
     st.write("")
-
-
-    # ========================================================
-    # RECENT EXPENSES
-    # ========================================================
 
     st.markdown(
         '<div class="section-title">🧾 Recent Expenses</div>',
@@ -838,7 +850,6 @@ def dashboard_page():
     )
 
     st.write("")
-
 
     if len(df) == 0:
 
@@ -848,37 +859,61 @@ def dashboard_page():
 
     else:
 
-        recent_df = df.head(10).copy()
+        for display_id, (_, row) in enumerate(
+            df.head(5).iterrows(),
+            start=1
+        ):
 
-        recent_df["amount"] = (
-            recent_df["amount"]
-            .astype(float)
-            .map(lambda x: f"₹{x:,.2f}")
-        )
+            with st.container(border=True):
 
-        recent_df = recent_df[
-            [
-                "id",
-                "amount",
-                "category",
-                "description",
-                "expense_date"
-            ]
-        ]
+                st.markdown(
+                    f"""
+                    <div class="expense-card-title">
+                        Expense #{display_id}
+                    </div>
 
-        recent_df.columns = [
-            "ID",
-            "Amount",
-            "Category",
-            "Description",
-            "Date"
-        ]
+                    <div class="expense-grid">
 
-        st.dataframe(
-            recent_df,
-            use_container_width=True,
-            hide_index=True
-        )
+                        <div>
+                            <div class="expense-label">
+                                Amount
+                            </div>
+                            <div class="expense-value">
+                                ₹{float(row["amount"]):,.2f}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="expense-label">
+                                Category
+                            </div>
+                            <div class="expense-value">
+                                {row["category"]}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="expense-label">
+                                Description
+                            </div>
+                            <div class="expense-value">
+                                {row["description"] or "-"}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="expense-label">
+                                Date
+                            </div>
+                            <div class="expense-value">
+                                {row["expense_date"]}
+                            </div>
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 
 # ============================================================
@@ -899,13 +934,7 @@ def expenses_page():
         unsafe_allow_html=True
     )
 
-    st.write("")
-
-
-    # ========================================================
-    # ADD EXPENSE
-    # ========================================================
-
+    # ADD
     with st.container(border=True):
 
         st.markdown(
@@ -913,13 +942,9 @@ def expenses_page():
             unsafe_allow_html=True
         )
 
-        st.write("")
+        c1, c2 = st.columns(2)
 
-
-        col1, col2, col3, col4 = st.columns(4)
-
-
-        with col1:
+        with c1:
 
             amount = st.number_input(
                 "Amount",
@@ -927,9 +952,6 @@ def expenses_page():
                 step=100.0,
                 format="%.2f"
             )
-
-
-        with col2:
 
             category = st.selectbox(
                 "Category",
@@ -945,25 +967,17 @@ def expenses_page():
                 ]
             )
 
-
-        with col3:
+        with c2:
 
             description = st.text_input(
                 "Description",
                 placeholder="What was this expense for?"
             )
 
-
-        with col4:
-
             expense_date = st.date_input(
                 "Date",
                 value=datetime.now().date()
             )
-
-
-        st.write("")
-
 
         if st.button(
             "💾 Add Expense",
@@ -988,10 +1002,6 @@ def expenses_page():
                         expense_date
                     )
 
-                    st.success(
-                        "Expense added successfully!"
-                    )
-
                     st.rerun()
 
                 except Exception as e:
@@ -1000,26 +1010,17 @@ def expenses_page():
                         f"Could not add expense: {str(e)}"
                     )
 
-
     st.write("")
 
-
-    # ========================================================
     # SEARCH
-    # ========================================================
-
     st.markdown(
         '<div class="section-title">🔍 Search Expenses</div>',
         unsafe_allow_html=True
     )
 
-    st.write("")
+    s1, s2 = st.columns(2)
 
-
-    search_col1, search_col2 = st.columns(2)
-
-
-    with search_col1:
+    with s1:
 
         search_category = st.selectbox(
             "Search by Category",
@@ -1036,31 +1037,19 @@ def expenses_page():
             ]
         )
 
-
-    with search_col2:
+    with s2:
 
         search_text = st.text_input(
-            "Search Description",
-            placeholder="Search description..."
+            "Search Description"
         )
 
-
-    st.write("")
-
-
-    # ========================================================
-    # GET DATA
-    # ========================================================
-
     df = get_expenses()
-
 
     if search_category != "All":
 
         df = df[
             df["category"] == search_category
         ]
-
 
     if search_text:
 
@@ -1074,6 +1063,7 @@ def expenses_page():
             )
         ]
 
+    st.write("")
 
     st.markdown(
         '<div class="section-title">📋 Your Expenses</div>',
@@ -1082,37 +1072,11 @@ def expenses_page():
 
     st.write("")
 
-
     if len(df) == 0:
 
-        st.info(
-            "No expenses found."
-        )
+        st.info("No expenses found.")
 
     else:
-
-        # ====================================================
-        # TABLE HEADER
-        # ====================================================
-
-        header = st.columns(
-            [0.5, 1.2, 1.3, 2.2, 1.3, 1.2]
-        )
-
-        header[0].markdown("**#**")
-        header[1].markdown("**Amount**")
-        header[2].markdown("**Category**")
-        header[3].markdown("**Description**")
-        header[4].markdown("**Date**")
-        header[5].markdown("**Actions**")
-
-
-        st.divider()
-
-
-        # ====================================================
-        # EXPENSE ROWS
-        # ====================================================
 
         for display_id, (_, row) in enumerate(
             df.iterrows(),
@@ -1121,69 +1085,67 @@ def expenses_page():
 
             expense_id = int(row["id"])
 
-            amount_value = float(row["amount"])
+            with st.container(border=True):
 
-            category_value = row["category"]
+                st.markdown(
+                    f"""
+                    <div class="expense-card-title">
+                        Expense #{display_id}
+                    </div>
 
-            description_value = (
-                row["description"]
-                if row["description"]
-                else "-"
-            )
+                    <div class="expense-grid">
 
-            date_value = row["expense_date"]
+                        <div>
+                            <div class="expense-label">
+                                Amount
+                            </div>
+                            <div class="expense-value">
+                                ₹{float(row["amount"]):,.2f}
+                            </div>
+                        </div>
 
+                        <div>
+                            <div class="expense-label">
+                                Category
+                            </div>
+                            <div class="expense-value">
+                                {row["category"]}
+                            </div>
+                        </div>
 
-            row_cols = st.columns(
-                [0.5, 1.2, 1.3, 2.2, 1.3, 1.2]
-            )
+                        <div>
+                            <div class="expense-label">
+                                Description
+                            </div>
+                            <div class="expense-value">
+                                {row["description"] or "-"}
+                            </div>
+                        </div>
 
+                        <div>
+                            <div class="expense-label">
+                                Date
+                            </div>
+                            <div class="expense-value">
+                                {row["expense_date"]}
+                            </div>
+                        </div>
 
-            with row_cols[0]:
-
-                st.write(
-                    f"**{display_id}**"
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
+                st.write("")
 
-            with row_cols[1]:
+                a1, a2 = st.columns(2)
 
-                st.write(
-                    f"₹{amount_value:,.2f}"
-                )
-
-
-            with row_cols[2]:
-
-                st.write(
-                    category_value
-                )
-
-
-            with row_cols[3]:
-
-                st.write(
-                    description_value
-                )
-
-
-            with row_cols[4]:
-
-                st.write(
-                    date_value
-                )
-
-
-            with row_cols[5]:
-
-                edit_col, delete_col = st.columns(2)
-
-
-                with edit_col:
+                with a1:
 
                     if st.button(
-                        "✏️",
-                        key=f"edit_{expense_id}"
+                        "✏️ Edit",
+                        key=f"edit_{expense_id}",
+                        use_container_width=True
                     ):
 
                         st.session_state.editing_expense = (
@@ -1192,22 +1154,18 @@ def expenses_page():
 
                         st.rerun()
 
-
-                with delete_col:
+                with a2:
 
                     if st.button(
-                        "🗑️",
-                        key=f"delete_{expense_id}"
+                        "🗑️ Delete",
+                        key=f"delete_{expense_id}",
+                        use_container_width=True
                     ):
 
                         try:
 
                             delete_expense(
                                 expense_id
-                            )
-
-                            st.success(
-                                "Expense deleted successfully!"
                             )
 
                             st.rerun()
@@ -1218,18 +1176,8 @@ def expenses_page():
                                 f"Delete failed: {str(e)}"
                             )
 
-
-            st.divider()
-
-
-    # ========================================================
-    # EDIT EXPENSE
-    # ========================================================
-
-    editing_id = (
-        st.session_state.editing_expense
-    )
-
+    # EDIT
+    editing_id = st.session_state.editing_expense
 
     if editing_id is not None:
 
@@ -1239,15 +1187,11 @@ def expenses_page():
             all_expenses["id"] == editing_id
         ]
 
-
         if len(selected) > 0:
 
             row = selected.iloc[0]
 
-
             st.write("")
-            st.write("")
-
 
             with st.container(border=True):
 
@@ -1258,93 +1202,70 @@ def expenses_page():
                     unsafe_allow_html=True
                 )
 
-                st.write("")
+                categories = [
+                    "Food",
+                    "Travel",
+                    "Shopping",
+                    "Bills",
+                    "Entertainment",
+                    "Education",
+                    "Health",
+                    "Other"
+                ]
 
+                current_category = row["category"]
 
-                edit_col1, edit_col2 = st.columns(2)
+                if current_category in categories:
 
-
-                with edit_col1:
-
-                    edit_amount = st.number_input(
-                        "Amount",
-                        min_value=0.0,
-                        value=float(row["amount"]),
-                        step=100.0,
-                        format="%.2f",
-                        key=f"edit_amount_{editing_id}"
+                    current_index = categories.index(
+                        current_category
                     )
 
+                else:
 
-                    categories = [
-                        "Food",
-                        "Travel",
-                        "Shopping",
-                        "Bills",
-                        "Entertainment",
-                        "Education",
-                        "Health",
-                        "Other"
-                    ]
+                    current_index = 0
 
+                edit_amount = st.number_input(
+                    "Amount",
+                    value=float(row["amount"]),
+                    min_value=0.0,
+                    step=100.0,
+                    key=f"edit_amount_{editing_id}"
+                )
 
-                    current_category = row["category"]
+                edit_category = st.selectbox(
+                    "Category",
+                    categories,
+                    index=current_index,
+                    key=f"edit_category_{editing_id}"
+                )
 
+                edit_description = st.text_input(
+                    "Description",
+                    value=row["description"] or "",
+                    key=f"edit_desc_{editing_id}"
+                )
 
-                    if current_category in categories:
+                try:
 
-                        category_index = categories.index(
-                            current_category
-                        )
+                    current_date = datetime.strptime(
+                        str(row["expense_date"]),
+                        "%Y-%m-%d"
+                    ).date()
 
-                    else:
+                except Exception:
 
-                        category_index = 0
+                    current_date = datetime.now().date()
 
+                edit_date = st.date_input(
+                    "Date",
+                    value=current_date,
+                    key=f"edit_date_{editing_id}"
+                )
 
-                    edit_category = st.selectbox(
-                        "Category",
-                        categories,
-                        index=category_index,
-                        key=f"edit_category_{editing_id}"
-                    )
+                b1, b2 = st.columns(2)
 
-
-                with edit_col2:
-
-                    edit_description = st.text_input(
-                        "Description",
-                        value=row["description"] or "",
-                        key=f"edit_description_{editing_id}"
-                    )
-
-
-                    try:
-
-                        edit_date = datetime.strptime(
-                            str(row["expense_date"]),
-                            "%Y-%m-%d"
-                        ).date()
-
-                    except:
-
-                        edit_date = datetime.now().date()
-
-
-                    edit_date = st.date_input(
-                        "Date",
-                        value=edit_date,
-                        key=f"edit_date_{editing_id}"
-                    )
-
-
-                st.write("")
-
-
-                save_col, cancel_col = st.columns(2)
-
-
-                with save_col:
+                with b1:
 
                     if st.button(
                         "💾 Save Changes",
@@ -1352,40 +1273,19 @@ def expenses_page():
                         use_container_width=True
                     ):
 
-                        if edit_amount <= 0:
+                        update_expense(
+                            editing_id,
+                            edit_amount,
+                            edit_category,
+                            edit_description,
+                            edit_date
+                        )
 
-                            st.warning(
-                                "Amount must be greater than 0."
-                            )
+                        st.session_state.editing_expense = None
 
-                        else:
+                        st.rerun()
 
-                            try:
-
-                                update_expense(
-                                    editing_id,
-                                    edit_amount,
-                                    edit_category,
-                                    edit_description,
-                                    edit_date
-                                )
-
-                                st.session_state.editing_expense = None
-
-                                st.success(
-                                    "Expense updated successfully!"
-                                )
-
-                                st.rerun()
-
-                            except Exception as e:
-
-                                st.error(
-                                    f"Update failed: {str(e)}"
-                                )
-
-
-                with cancel_col:
+                with b2:
 
                     if st.button(
                         "❌ Cancel",
@@ -1398,7 +1298,7 @@ def expenses_page():
 
 
 # ============================================================
-# REPORTS PAGE
+# REPORTS
 # ============================================================
 
 def reports_page():
@@ -1415,11 +1315,7 @@ def reports_page():
         unsafe_allow_html=True
     )
 
-    st.write("")
-
-
     df = get_expenses()
-
 
     if len(df) == 0:
 
@@ -1429,187 +1325,105 @@ def reports_page():
 
         return
 
-
-    df["amount"] = (
-        df["amount"]
-        .astype(float)
-    )
-
+    df["amount"] = df["amount"].astype(float)
 
     total = df["amount"].sum()
-
-    highest = df["amount"].max()
-
-    transaction_count = len(df)
-
     average = df["amount"].mean()
+    highest = df["amount"].max()
+    count = len(df)
 
+    m1, m2 = st.columns(2)
 
-    # ========================================================
-    # SUMMARY
-    # ========================================================
-
-    col1, col2, col3, col4 = st.columns(4)
-
-
-    with col1:
+    with m1:
 
         st.metric(
             "💰 Total Spending",
             f"₹{total:,.2f}"
         )
 
-
-    with col2:
-
         st.metric(
-            "📈 Average",
+            "📈 Average Expense",
             f"₹{average:,.2f}"
         )
 
-
-    with col3:
+    with m2:
 
         st.metric(
             "💳 Highest Expense",
             f"₹{highest:,.2f}"
         )
 
-
-    with col4:
-
         st.metric(
             "🧾 Transactions",
-            transaction_count
+            count
         )
-
-
-    st.write("")
-    st.write("")
-
-
-    # ========================================================
-    # CATEGORY DATA
-    # ========================================================
 
     category_data = (
-        df
-        .groupby("category")["amount"]
+        df.groupby("category")["amount"]
         .sum()
         .reset_index()
     )
 
+    st.subheader("🥧 Expense by Category")
 
-    chart_col1, chart_col2 = st.columns(2)
-
-
-    # ========================================================
-    # PIE CHART
-    # ========================================================
-
-    with chart_col1:
-
-        st.subheader(
-            "🥧 Expense by Category"
-        )
-
-
-        fig = px.pie(
-            category_data,
-            names="category",
-            values="amount",
-            hole=0.4
-        )
-
-
-        fig.update_layout(
-            margin=dict(
-                t=30,
-                b=10,
-                l=10,
-                r=10
-            )
-        )
-
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-
-    # ========================================================
-    # BAR CHART
-    # ========================================================
-
-    with chart_col2:
-
-        st.subheader(
-            "📊 Category Spending"
-        )
-
-
-        bar_fig = px.bar(
-            category_data,
-            x="category",
-            y="amount",
-            text="amount"
-        )
-
-
-        bar_fig.update_traces(
-            texttemplate="₹%{text:.0f}",
-            textposition="outside"
-        )
-
-
-        bar_fig.update_layout(
-            xaxis_title="Category",
-            yaxis_title="Amount"
-        )
-
-
-        st.plotly_chart(
-            bar_fig,
-            use_container_width=True
-        )
-
-
-    # ========================================================
-    # CATEGORY SUMMARY
-    # ========================================================
-
-    st.subheader(
-        "📋 Category Summary"
+    fig = px.pie(
+        category_data,
+        names="category",
+        values="amount",
+        hole=0.4
     )
 
-
-    summary = (
-        df
-        .groupby("category")["amount"]
-        .sum()
-        .reset_index()
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
     )
 
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.subheader("📊 Category Spending")
+
+    bar = px.bar(
+        category_data,
+        x="category",
+        y="amount",
+        text="amount"
+    )
+
+    bar.update_traces(
+        texttemplate="₹%{text:.0f}",
+        textposition="outside"
+    )
+
+    bar.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
+    )
+
+    st.plotly_chart(
+        bar,
+        use_container_width=True
+    )
+
+    st.subheader("📋 Category Summary")
+
+    summary = category_data.copy()
 
     summary["Percentage"] = (
-        summary["amount"]
-        / total
-        * 100
+        summary["amount"] / total * 100
     )
-
 
     summary["Amount"] = (
         summary["amount"]
         .map(lambda x: f"₹{x:,.2f}")
     )
 
-
     summary["Percentage"] = (
         summary["Percentage"]
         .map(lambda x: f"{x:.1f}%")
     )
-
 
     summary = summary[
         [
@@ -1619,13 +1433,11 @@ def reports_page():
         ]
     ]
 
-
     summary.columns = [
         "Category",
         "Amount",
         "Percentage"
     ]
-
 
     st.dataframe(
         summary,
@@ -1635,18 +1447,16 @@ def reports_page():
 
 
 # ============================================================
-# PAGE ROUTING
+# ROUTING
 # ============================================================
 
 if st.session_state.page == "Dashboard":
 
     dashboard_page()
 
-
 elif st.session_state.page == "Expenses":
 
     expenses_page()
-
 
 elif st.session_state.page == "Reports":
 
