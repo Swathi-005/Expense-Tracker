@@ -6,16 +6,14 @@ from datetime import datetime
 
 
 # ============================================================
-# WEBSITE URL
+# APP URL
 # ============================================================
 
-APP_URL = (
-    "https://expense-tracker-ghpfs33yfc5qwpkn3mwhti.streamlit.app"
-)
+APP_URL = "https://expense-tracker-ghpfs33yfc5qwpkn3mwhti.streamlit.app"
 
 
 # ============================================================
-# PAGE CONFIG
+# PAGE CONFIGURATION
 # ============================================================
 
 st.set_page_config(
@@ -44,8 +42,6 @@ st.markdown(
         padding-bottom: 2rem;
     }
 
-    /* Sidebar */
-
     [data-testid="stSidebar"] {
         background-color: #1E293B;
     }
@@ -58,8 +54,6 @@ st.markdown(
     [data-testid="stSidebar"] h3 {
         color: white !important;
     }
-
-    /* Main titles */
 
     .main-title {
         font-size: 38px;
@@ -74,8 +68,6 @@ st.markdown(
         opacity: 0.75;
         margin-bottom: 20px;
     }
-
-    /* Login */
 
     .login-box {
         background-color: var(--secondary-background-color);
@@ -99,17 +91,17 @@ st.markdown(
         margin-top: 8px;
     }
 
-    .stButton > button {
-        border-radius: 8px;
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricValue"] {
+        color: var(--text-color) !important;
     }
 
     [data-testid="stWidgetLabel"] p {
         color: var(--text-color) !important;
     }
 
-    [data-testid="stMetricLabel"],
-    [data-testid="stMetricValue"] {
-        color: var(--text-color) !important;
+    .stButton > button {
+        border-radius: 8px;
     }
 
     @media (max-width: 768px) {
@@ -139,19 +131,20 @@ st.markdown(
 
 
 # ============================================================
-# SUPABASE
+# SUPABASE CLIENT
 # ============================================================
 
-@st.cache_resource
-def create_supabase_client():
+def new_supabase_client():
 
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
 
-    return create_client(url, key)
 
-
-supabase = create_supabase_client()
+# Do NOT cache an authenticated Supabase client.
+# Each Streamlit user should have their own session.
+supabase = new_supabase_client()
 
 
 # ============================================================
@@ -164,7 +157,8 @@ defaults = {
     "user": None,
     "page": "Dashboard",
     "editing_expense": None,
-    "password_recovery": False
+    "password_recovery": False,
+    "reset_complete": False
 }
 
 for key, value in defaults.items():
@@ -174,24 +168,15 @@ for key, value in defaults.items():
 
 
 # ============================================================
-# AUTH HELPERS
+# SESSION HELPERS
 # ============================================================
-
-def clear_login_session():
-
-    st.session_state.access_token = None
-    st.session_state.refresh_token = None
-    st.session_state.user = None
-    st.session_state.page = "Dashboard"
-    st.session_state.editing_expense = None
-
 
 def save_auth_session(response):
 
-    if response.user:
+    if response.user is not None:
         st.session_state.user = response.user
 
-    if response.session:
+    if response.session is not None:
 
         st.session_state.access_token = (
             response.session.access_token
@@ -202,120 +187,134 @@ def save_auth_session(response):
         )
 
 
+def clear_auth_session():
+
+    st.session_state.access_token = None
+    st.session_state.refresh_token = None
+    st.session_state.user = None
+    st.session_state.editing_expense = None
+    st.session_state.page = "Dashboard"
+
+
 def get_authenticated_client():
 
-    client = create_supabase_client()
-
     if (
-        st.session_state.access_token
-        and st.session_state.refresh_token
+        not st.session_state.access_token
+        or not st.session_state.refresh_token
     ):
+        return None
 
-        try:
-
-            response = client.auth.set_session(
-                st.session_state.access_token,
-                st.session_state.refresh_token
-            )
-
-            if response.session:
-
-                st.session_state.access_token = (
-                    response.session.access_token
-                )
-
-                st.session_state.refresh_token = (
-                    response.session.refresh_token
-                )
-
-        except Exception:
-
-            return None
-
-    return client
-
-
-# ============================================================
-# PASSWORD RECOVERY CALLBACK
-# ============================================================
-
-def handle_auth_callback():
+    client = new_supabase_client()
 
     try:
 
-        params = st.query_params
+        response = client.auth.set_session(
+            st.session_state.access_token,
+            st.session_state.refresh_token
+        )
 
-        code = params.get("code")
+        if response.session:
 
-        if code:
+            st.session_state.access_token = (
+                response.session.access_token
+            )
 
-            try:
+            st.session_state.refresh_token = (
+                response.session.refresh_token
+            )
 
-                response = (
-                    supabase.auth
-                    .exchange_code_for_session(
-                        {
-                            "auth_code": code
-                        }
-                    )
-                )
-
-                if response.session:
-
-                    save_auth_session(response)
-
-                    st.session_state.password_recovery = True
-
-                    st.query_params.clear()
-
-                    st.rerun()
-
-            except Exception:
-
-                # If it was already consumed, simply continue.
-                pass
+        return client
 
     except Exception:
 
-        pass
-
-
-handle_auth_callback()
+        return None
 
 
 # ============================================================
-# PASSWORD UPDATE PAGE
+# HANDLE PASSWORD RESET LINK
 # ============================================================
 
-def password_update_page():
+def handle_recovery_link():
+
+    token_hash = st.query_params.get("token_hash")
+    auth_type = st.query_params.get("type")
+
+    if not token_hash:
+        return
+
+    if auth_type != "recovery":
+        return
+
+    try:
+
+        client = new_supabase_client()
+
+        response = client.auth.verify_otp(
+            {
+                "token_hash": token_hash,
+                "type": "recovery"
+            }
+        )
+
+        if response.session:
+
+            save_auth_session(response)
+
+            st.session_state.password_recovery = True
+
+            st.query_params.clear()
+
+            st.rerun()
+
+        else:
+
+            st.error(
+                "The password reset link is invalid or has expired."
+            )
+
+    except Exception as e:
+
+        st.error(
+            "The password reset link is invalid or has expired."
+        )
+
+        st.caption(str(e))
+
+
+handle_recovery_link()
+
+
+# ============================================================
+# PASSWORD RESET PAGE
+# ============================================================
+
+def password_reset_page():
 
     st.write("")
     st.write("")
 
-    left, center, right = st.columns(
-        [1, 2, 1]
-    )
+    left, center, right = st.columns([1, 2, 1])
 
     with center:
 
-        st.title(
-            "🔐 Create New Password"
-        )
+        st.title("🔐 Reset Password")
 
         st.info(
-            "Enter your new password below."
+            "Create a new password for your Expense Tracker account."
         )
 
         new_password = st.text_input(
             "New Password",
             type="password",
-            key="new_password"
+            placeholder="Minimum 6 characters",
+            key="recovery_new_password"
         )
 
-        confirm_new_password = st.text_input(
+        confirm_password = st.text_input(
             "Confirm New Password",
             type="password",
-            key="confirm_new_password"
+            placeholder="Re-enter your password",
+            key="recovery_confirm_password"
         )
 
         if st.button(
@@ -330,10 +329,7 @@ def password_update_page():
                     "Password must contain at least 6 characters."
                 )
 
-            elif (
-                new_password
-                != confirm_new_password
-            ):
+            elif new_password != confirm_password:
 
                 st.error(
                     "Passwords do not match."
@@ -343,33 +339,27 @@ def password_update_page():
 
                 try:
 
-                    client = (
-                        get_authenticated_client()
-                    )
+                    client = get_authenticated_client()
 
                     if client is None:
 
                         st.error(
-                            "Recovery session expired. "
-                            "Please request a new reset link."
+                            "Your password reset session expired. "
+                            "Please request another reset link."
                         )
 
                         return
 
                     client.auth.update_user(
                         {
-                            "password":
-                            new_password
+                            "password": new_password
                         }
                     )
 
-                    st.success(
-                        "Password updated successfully."
-                    )
-
                     st.session_state.password_recovery = False
+                    st.session_state.reset_complete = True
 
-                    clear_login_session()
+                    clear_auth_session()
 
                     st.rerun()
 
@@ -380,9 +370,48 @@ def password_update_page():
                     )
 
 
+# ============================================================
+# PASSWORD RESET SUCCESS
+# ============================================================
+
+def password_reset_success():
+
+    st.write("")
+    st.write("")
+
+    left, center, right = st.columns([1, 2, 1])
+
+    with center:
+
+        st.success(
+            "✅ Your password has been changed successfully."
+        )
+
+        st.info(
+            "You can now log in using your new password."
+        )
+
+        if st.button(
+            "🔐 Go to Login",
+            type="primary",
+            width="stretch"
+        ):
+
+            st.session_state.reset_complete = False
+
+            st.rerun()
+
+
 if st.session_state.password_recovery:
 
-    password_update_page()
+    password_reset_page()
+
+    st.stop()
+
+
+if st.session_state.reset_complete:
+
+    password_reset_success()
 
     st.stop()
 
@@ -396,17 +425,13 @@ def authentication_page():
     st.write("")
     st.write("")
 
-    left, center, right = st.columns(
-        [1, 2, 1]
-    )
+    left, center, right = st.columns([1, 2, 1])
 
     with center:
 
         st.markdown(
             '<div class="login-box">'
-            '<div class="login-title">'
-            '💰 Expense Tracker'
-            '</div>'
+            '<div class="login-title">💰 Expense Tracker</div>'
             '<div class="login-subtitle">'
             'Manage your expenses anywhere, anytime'
             '</div>'
@@ -450,7 +475,8 @@ def authentication_page():
             if st.button(
                 "🔑 Login",
                 type="primary",
-                width="stretch"
+                width="stretch",
+                key="login_button"
             ):
 
                 if not email or not password:
@@ -463,8 +489,10 @@ def authentication_page():
 
                     try:
 
+                        client = new_supabase_client()
+
                         response = (
-                            supabase.auth
+                            client.auth
                             .sign_in_with_password(
                                 {
                                     "email": email,
@@ -511,15 +539,21 @@ def authentication_page():
                 "Forgot Password?"
             )
 
+            st.caption(
+                "Enter your registered email address and "
+                "we will send you a reset link."
+            )
+
             reset_email = st.text_input(
-                "Enter your registered email",
+                "Registered Email",
                 placeholder="example@gmail.com",
                 key="reset_email"
             )
 
             if st.button(
                 "📧 Send Password Reset Link",
-                width="stretch"
+                width="stretch",
+                key="send_reset_button"
             ):
 
                 if not reset_email:
@@ -532,11 +566,12 @@ def authentication_page():
 
                     try:
 
-                        supabase.auth.reset_password_for_email(
+                        client = new_supabase_client()
+
+                        client.auth.reset_password_for_email(
                             reset_email,
                             {
-                                "redirect_to":
-                                APP_URL
+                                "redirect_to": APP_URL
                             }
                         )
 
@@ -545,20 +580,19 @@ def authentication_page():
                         )
 
                         st.info(
-                            "Open the link in your email. "
-                            "It will return you to this website "
-                            "where you can create a new password."
+                            "Check your email and click "
+                            "'Reset Password'."
                         )
 
                     except Exception as e:
 
                         st.error(
-                            f"Could not send reset link: {str(e)}"
+                            f"Could not send reset email: {str(e)}"
                         )
 
 
         # ====================================================
-        # SIGNUP
+        # SIGN UP
         # ====================================================
 
         with signup_tab:
@@ -586,17 +620,18 @@ def authentication_page():
                 key="signup_password"
             )
 
-            confirm_password = st.text_input(
+            signup_confirm = st.text_input(
                 "Confirm Password",
                 type="password",
-                placeholder="Re-enter password",
+                placeholder="Re-enter your password",
                 key="signup_confirm"
             )
 
             if st.button(
                 "📝 Create Account",
                 type="primary",
-                width="stretch"
+                width="stretch",
+                key="signup_button"
             ):
 
                 if not name:
@@ -611,18 +646,13 @@ def authentication_page():
                         "Please enter your email."
                     )
 
-                elif len(
-                    signup_password
-                ) < 6:
+                elif len(signup_password) < 6:
 
                     st.warning(
                         "Password must contain at least 6 characters."
                     )
 
-                elif (
-                    signup_password
-                    != confirm_password
-                ):
+                elif signup_password != signup_confirm:
 
                     st.error(
                         "Passwords do not match."
@@ -632,29 +662,19 @@ def authentication_page():
 
                     try:
 
-                        response = (
-                            supabase.auth
-                            .sign_up(
-                                {
-                                    "email":
-                                    signup_email,
+                        client = new_supabase_client()
 
-                                    "password":
-                                    signup_password,
-
-                                    "options":
-                                    {
-                                        "data":
-                                        {
-                                            "full_name":
-                                            name
-                                        },
-
-                                        "email_redirect_to":
-                                        APP_URL
-                                    }
+                        response = client.auth.sign_up(
+                            {
+                                "email": signup_email,
+                                "password": signup_password,
+                                "options": {
+                                    "data": {
+                                        "full_name": name
+                                    },
+                                    "email_redirect_to": APP_URL
                                 }
-                            )
+                            }
                         )
 
                         if response.user:
@@ -678,9 +698,10 @@ def authentication_page():
                                 )
 
                                 st.info(
-                                    "Please check your email and "
-                                    "click the confirmation link. "
-                                    "You will return to this website."
+                                    "Please check your email and click "
+                                    "the confirmation link. "
+                                    "After confirmation, return here "
+                                    "and log in."
                                 )
 
                         else:
@@ -711,7 +732,7 @@ if (
 
 
 # ============================================================
-# AUTHENTICATED CLIENT
+# AUTHENTICATED SUPABASE CLIENT
 # ============================================================
 
 supabase = get_authenticated_client()
@@ -719,24 +740,20 @@ supabase = get_authenticated_client()
 
 if supabase is None:
 
-    clear_login_session()
+    clear_auth_session()
 
     st.rerun()
 
 
 # ============================================================
-# CURRENT USER
+# GET CURRENT USER
 # ============================================================
 
 try:
 
-    user_response = (
-        supabase.auth.get_user()
-    )
+    response = supabase.auth.get_user()
 
-    current_user = (
-        user_response.user
-    )
+    current_user = response.user
 
     if current_user is None:
 
@@ -750,13 +767,13 @@ try:
 
 except Exception:
 
-    clear_login_session()
+    clear_auth_session()
 
     st.rerun()
 
 
 # ============================================================
-# USER INFO
+# USER DETAILS
 # ============================================================
 
 user_id = (
@@ -767,12 +784,12 @@ user_email = (
     st.session_state.user.email
 )
 
-metadata = (
+user_metadata = (
     st.session_state.user.user_metadata
     or {}
 )
 
-user_name = metadata.get(
+user_name = user_metadata.get(
     "full_name",
     "User"
 )
@@ -817,18 +834,12 @@ def get_expenses():
             ]
         )
 
-    df = pd.DataFrame(
-        data
+    df = pd.DataFrame(data)
+
+    df["id"] = pd.to_numeric(
+        df["id"],
+        errors="coerce"
     )
-
-    if "id" in df.columns:
-
-        df["id"] = (
-            pd.to_numeric(
-                df["id"],
-                errors="coerce"
-            )
-        )
 
     return df
 
@@ -845,20 +856,11 @@ def add_expense(
         .table("expenses")
         .insert(
             {
-                "user_id":
-                user_id,
-
-                "amount":
-                float(amount),
-
-                "category":
-                category,
-
-                "description":
-                description,
-
-                "expense_date":
-                str(expense_date)
+                "user_id": user_id,
+                "amount": float(amount),
+                "category": category,
+                "description": description,
+                "expense_date": str(expense_date)
             }
         )
         .execute()
@@ -878,17 +880,10 @@ def update_expense(
         .table("expenses")
         .update(
             {
-                "amount":
-                float(amount),
-
-                "category":
-                category,
-
-                "description":
-                description,
-
-                "expense_date":
-                str(expense_date)
+                "amount": float(amount),
+                "category": category,
+                "description": description,
+                "expense_date": str(expense_date)
             }
         )
         .eq(
@@ -1007,13 +1002,13 @@ with st.sidebar:
 
             pass
 
-        clear_login_session()
+        clear_auth_session()
 
         st.rerun()
 
 
 # ============================================================
-# DASHBOARD
+# DASHBOARD PAGE
 # ============================================================
 
 def dashboard_page():
@@ -1034,6 +1029,7 @@ def dashboard_page():
         unsafe_allow_html=True
     )
 
+
     if len(df) > 0:
 
         df["amount"] = (
@@ -1042,7 +1038,8 @@ def dashboard_page():
         )
 
         total = (
-            df["amount"].sum()
+            df["amount"]
+            .sum()
         )
 
         count = len(df)
@@ -1058,12 +1055,12 @@ def dashboard_page():
         average = 0
 
 
-    metric1, metric2, metric3 = (
+    col1, col2, col3 = (
         st.columns(3)
     )
 
 
-    with metric1:
+    with col1:
 
         st.metric(
             "💰 Total Expenses",
@@ -1071,7 +1068,7 @@ def dashboard_page():
         )
 
 
-    with metric2:
+    with col2:
 
         st.metric(
             "🧾 Transactions",
@@ -1079,7 +1076,7 @@ def dashboard_page():
         )
 
 
-    with metric3:
+    with col3:
 
         st.metric(
             "📈 Average Expense",
@@ -1138,7 +1135,7 @@ def dashboard_page():
 
 
 # ============================================================
-# EXPENSE PAGE
+# EXPENSE MANAGEMENT PAGE
 # ============================================================
 
 def expenses_page():
@@ -1159,7 +1156,7 @@ def expenses_page():
 
 
     # ========================================================
-    # EDIT FORM - DISPLAYED AT TOP
+    # EDIT FORM
     # ========================================================
 
     editing_id = (
@@ -1174,7 +1171,7 @@ def expenses_page():
         )
 
         selected = all_expenses[
-            all_expenses["id"].astype("Int64")
+            all_expenses["id"]
             == int(editing_id)
         ]
 
@@ -1185,6 +1182,7 @@ def expenses_page():
                 selected.iloc[0]
             )
 
+
             with st.container(
                 border=True
             ):
@@ -1194,9 +1192,10 @@ def expenses_page():
                 )
 
                 st.info(
-                    "Update the fields and "
-                    "press Save Changes."
+                    "Change the details below and "
+                    "click Save Changes."
                 )
+
 
                 categories = [
                     "Food",
@@ -1209,16 +1208,15 @@ def expenses_page():
                     "Other"
                 ]
 
+
                 current_category = (
                     row["category"]
                 )
 
-                if (
-                    current_category
-                    in categories
-                ):
 
-                    category_index = (
+                if current_category in categories:
+
+                    current_index = (
                         categories.index(
                             current_category
                         )
@@ -1226,7 +1224,7 @@ def expenses_page():
 
                 else:
 
-                    category_index = 0
+                    current_index = 0
 
 
                 edit_amount = (
@@ -1250,7 +1248,7 @@ def expenses_page():
                     st.selectbox(
                         "Edit Category",
                         categories,
-                        index=category_index,
+                        index=current_index,
                         key=(
                             f"edit_category_"
                             f"{editing_id}"
@@ -1263,7 +1261,9 @@ def expenses_page():
                     st.text_input(
                         "Edit Description",
                         value=(
-                            row["description"]
+                            row[
+                                "description"
+                            ]
                             or ""
                         ),
                         key=(
@@ -1276,7 +1276,7 @@ def expenses_page():
 
                 try:
 
-                    existing_date = (
+                    current_date = (
                         datetime.strptime(
                             str(
                                 row[
@@ -1289,7 +1289,7 @@ def expenses_page():
 
                 except Exception:
 
-                    existing_date = (
+                    current_date = (
                         datetime.now()
                         .date()
                     )
@@ -1298,7 +1298,7 @@ def expenses_page():
                 edit_date = (
                     st.date_input(
                         "Edit Date",
-                        value=existing_date,
+                        value=current_date,
                         key=(
                             f"edit_date_"
                             f"{editing_id}"
@@ -1319,15 +1319,12 @@ def expenses_page():
                         type="primary",
                         width="stretch",
                         key=(
-                            f"save_edit_"
+                            f"save_"
                             f"{editing_id}"
                         )
                     ):
 
-                        if (
-                            edit_amount
-                            <= 0
-                        ):
+                        if edit_amount <= 0:
 
                             st.warning(
                                 "Amount must be greater than 0."
@@ -1338,9 +1335,7 @@ def expenses_page():
                             try:
 
                                 update_expense(
-                                    int(
-                                        editing_id
-                                    ),
+                                    editing_id,
                                     edit_amount,
                                     edit_category,
                                     edit_description,
@@ -1368,7 +1363,7 @@ def expenses_page():
                         "❌ Cancel",
                         width="stretch",
                         key=(
-                            f"cancel_edit_"
+                            f"cancel_"
                             f"{editing_id}"
                         )
                     ):
@@ -1454,7 +1449,8 @@ def expenses_page():
         if st.button(
             "💾 Add Expense",
             type="primary",
-            width="stretch"
+            width="stretch",
+            key="add_expense"
         ):
 
             if amount <= 0:
@@ -1487,16 +1483,16 @@ def expenses_page():
                     )
 
 
-    st.write("")
-
-
     # ========================================================
     # SEARCH
     # ========================================================
 
+    st.write("")
+
     st.subheader(
         "🔍 Search Expenses"
     )
+
 
     search_col1, search_col2 = (
         st.columns(2)
@@ -1561,6 +1557,10 @@ def expenses_page():
         ]
 
 
+    # ========================================================
+    # EXPENSE LIST
+    # ========================================================
+
     st.write("")
 
     st.subheader(
@@ -1577,10 +1577,6 @@ def expenses_page():
         return
 
 
-    # ========================================================
-    # MOBILE FRIENDLY EXPENSE CARDS
-    # ========================================================
-
     for display_id, (_, row) in enumerate(
         df.iterrows(),
         start=1
@@ -1589,6 +1585,7 @@ def expenses_page():
         expense_id = int(
             row["id"]
         )
+
 
         with st.container(
             border=True
@@ -1712,26 +1709,29 @@ def reports_page():
 
 
     total = (
-        df["amount"].sum()
+        df["amount"]
+        .sum()
     )
 
     average = (
-        df["amount"].mean()
+        df["amount"]
+        .mean()
     )
 
     highest = (
-        df["amount"].max()
+        df["amount"]
+        .max()
     )
 
     count = len(df)
 
 
-    metric1, metric2 = (
+    col1, col2 = (
         st.columns(2)
     )
 
 
-    with metric1:
+    with col1:
 
         st.metric(
             "💰 Total Spending",
@@ -1744,7 +1744,7 @@ def reports_page():
         )
 
 
-    with metric2:
+    with col2:
 
         st.metric(
             "💳 Highest Expense",
@@ -1784,12 +1784,8 @@ def reports_page():
 
 
     pie.update_layout(
-        paper_bgcolor=(
-            "rgba(0,0,0,0)"
-        ),
-        plot_bgcolor=(
-            "rgba(0,0,0,0)"
-        )
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
     )
 
 
@@ -1817,20 +1813,14 @@ def reports_page():
 
 
     bar.update_traces(
-        texttemplate=(
-            "₹%{text:.0f}"
-        ),
+        texttemplate="₹%{text:.0f}",
         textposition="outside"
     )
 
 
     bar.update_layout(
-        paper_bgcolor=(
-            "rgba(0,0,0,0)"
-        ),
-        plot_bgcolor=(
-            "rgba(0,0,0,0)"
-        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         xaxis_title="Category",
         yaxis_title="Amount"
     )
@@ -1843,7 +1833,7 @@ def reports_page():
 
 
     # ========================================================
-    # SUMMARY
+    # CATEGORY SUMMARY
     # ========================================================
 
     st.subheader(
@@ -1866,8 +1856,8 @@ def reports_page():
     summary["Amount"] = (
         summary["amount"]
         .map(
-            lambda x:
-            f"₹{x:,.2f}"
+            lambda value:
+            f"₹{value:,.2f}"
         )
     )
 
@@ -1875,8 +1865,8 @@ def reports_page():
     summary["Percentage"] = (
         summary["Percentage"]
         .map(
-            lambda x:
-            f"{x:.1f}%"
+            lambda value:
+            f"{value:.1f}%"
         )
     )
 
@@ -1908,25 +1898,16 @@ def reports_page():
 # PAGE ROUTING
 # ============================================================
 
-if (
-    st.session_state.page
-    == "Dashboard"
-):
+if st.session_state.page == "Dashboard":
 
     dashboard_page()
 
 
-elif (
-    st.session_state.page
-    == "Expenses"
-):
+elif st.session_state.page == "Expenses":
 
     expenses_page()
 
 
-elif (
-    st.session_state.page
-    == "Reports"
-):
+elif st.session_state.page == "Reports":
 
     reports_page()
