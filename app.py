@@ -50,7 +50,7 @@ st.markdown(
         color: white !important;
     }
 
-    /* Main titles */
+    /* Titles */
 
     .main-title {
         font-size: 38px;
@@ -90,26 +90,18 @@ st.markdown(
         margin-top: 8px;
     }
 
-    /* Inputs */
-
     [data-testid="stWidgetLabel"] p {
         color: var(--text-color) !important;
     }
-
-    /* Metrics */
 
     [data-testid="stMetricLabel"],
     [data-testid="stMetricValue"] {
         color: var(--text-color) !important;
     }
 
-    /* Buttons */
-
     .stButton > button {
         border-radius: 8px;
     }
-
-    /* Mobile */
 
     @media (max-width: 768px) {
 
@@ -138,7 +130,7 @@ st.markdown(
 
 
 # ============================================================
-# SUPABASE CLIENT
+# SUPABASE
 # ============================================================
 
 def new_supabase_client():
@@ -161,7 +153,8 @@ defaults = {
     "refresh_token": None,
     "user": None,
     "page": "Dashboard",
-    "editing_expense": None
+    "editing_expense": None,
+    "editing_source": None
 }
 
 for key, value in defaults.items():
@@ -195,8 +188,9 @@ def clear_auth_session():
     st.session_state.access_token = None
     st.session_state.refresh_token = None
     st.session_state.user = None
-    st.session_state.editing_expense = None
     st.session_state.page = "Dashboard"
+    st.session_state.editing_expense = None
+    st.session_state.editing_source = None
 
 
 def get_authenticated_client():
@@ -409,18 +403,13 @@ def authentication_page():
                         "Please enter your email."
                     )
 
-                elif len(
-                    signup_password
-                ) < 6:
+                elif len(signup_password) < 6:
 
                     st.warning(
                         "Password must contain at least 6 characters."
                     )
 
-                elif (
-                    signup_password
-                    != signup_confirm
-                ):
+                elif signup_password != signup_confirm:
 
                     st.error(
                         "Passwords do not match."
@@ -435,18 +424,11 @@ def authentication_page():
                         response = (
                             client.auth.sign_up(
                                 {
-                                    "email":
-                                    signup_email,
-
-                                    "password":
-                                    signup_password,
-
-                                    "options":
-                                    {
-                                        "data":
-                                        {
-                                            "full_name":
-                                            name
+                                    "email": signup_email,
+                                    "password": signup_password,
+                                    "options": {
+                                        "data": {
+                                            "full_name": name
                                         }
                                     }
                                 }
@@ -718,6 +700,200 @@ def delete_expense(
 
 
 # ============================================================
+# REUSABLE EDIT FORM
+# ============================================================
+
+def show_edit_form(
+    row,
+    source
+):
+
+    editing_id = int(
+        row["id"]
+    )
+
+    categories = [
+        "Food",
+        "Travel",
+        "Shopping",
+        "Bills",
+        "Entertainment",
+        "Education",
+        "Health",
+        "Other"
+    ]
+
+    current_category = (
+        row["category"]
+    )
+
+    if current_category in categories:
+
+        category_index = (
+            categories.index(
+                current_category
+            )
+        )
+
+    else:
+
+        category_index = 0
+
+
+    with st.container(
+        border=True
+    ):
+
+        st.subheader(
+            "✏️ Edit Expense"
+        )
+
+        st.info(
+            "Update the expense details and click Save Changes."
+        )
+
+
+        edit_amount = st.number_input(
+            "Edit Amount",
+            min_value=0.0,
+            value=float(
+                row["amount"]
+            ),
+            step=100.0,
+            format="%.2f",
+            key=(
+                f"{source}_amount_"
+                f"{editing_id}"
+            )
+        )
+
+
+        edit_category = st.selectbox(
+            "Edit Category",
+            categories,
+            index=category_index,
+            key=(
+                f"{source}_category_"
+                f"{editing_id}"
+            )
+        )
+
+
+        edit_description = (
+            st.text_input(
+                "Edit Description",
+                value=(
+                    row["description"]
+                    or ""
+                ),
+                key=(
+                    f"{source}_description_"
+                    f"{editing_id}"
+                )
+            )
+        )
+
+
+        try:
+
+            current_date = (
+                datetime.strptime(
+                    str(
+                        row[
+                            "expense_date"
+                        ]
+                    ),
+                    "%Y-%m-%d"
+                ).date()
+            )
+
+        except Exception:
+
+            current_date = (
+                datetime.now()
+                .date()
+            )
+
+
+        edit_date = st.date_input(
+            "Edit Date",
+            value=current_date,
+            key=(
+                f"{source}_date_"
+                f"{editing_id}"
+            )
+        )
+
+
+        save_col, cancel_col = (
+            st.columns(2)
+        )
+
+
+        with save_col:
+
+            if st.button(
+                "💾 Save Changes",
+                type="primary",
+                width="stretch",
+                key=(
+                    f"{source}_save_"
+                    f"{editing_id}"
+                )
+            ):
+
+                if edit_amount <= 0:
+
+                    st.warning(
+                        "Amount must be greater than 0."
+                    )
+
+                else:
+
+                    try:
+
+                        update_expense(
+                            editing_id,
+                            edit_amount,
+                            edit_category,
+                            edit_description,
+                            edit_date
+                        )
+
+                        st.session_state.editing_expense = None
+                        st.session_state.editing_source = None
+
+                        st.success(
+                            "Expense updated successfully."
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"Update failed: {str(e)}"
+                        )
+
+
+        with cancel_col:
+
+            if st.button(
+                "❌ Cancel",
+                width="stretch",
+                key=(
+                    f"{source}_cancel_"
+                    f"{editing_id}"
+                )
+            ):
+
+                st.session_state.editing_expense = None
+                st.session_state.editing_source = None
+
+                st.rerun()
+
+
+# ============================================================
 # SIDEBAR
 # ============================================================
 
@@ -759,6 +935,9 @@ with st.sidebar:
             "Dashboard"
         )
 
+        st.session_state.editing_expense = None
+        st.session_state.editing_source = None
+
         st.rerun()
 
 
@@ -771,6 +950,9 @@ with st.sidebar:
             "Expenses"
         )
 
+        st.session_state.editing_expense = None
+        st.session_state.editing_source = None
+
         st.rerun()
 
 
@@ -782,6 +964,9 @@ with st.sidebar:
         st.session_state.page = (
             "Reports"
         )
+
+        st.session_state.editing_expense = None
+        st.session_state.editing_source = None
 
         st.rerun()
 
@@ -815,12 +1000,14 @@ def dashboard_page():
 
     df = get_expenses()
 
+
     st.markdown(
         '<div class="main-title">'
         'Expense Dashboard'
         '</div>',
         unsafe_allow_html=True
     )
+
 
     st.markdown(
         f'<div class="subtitle">'
@@ -830,6 +1017,10 @@ def dashboard_page():
     )
 
 
+    # ========================================================
+    # METRICS
+    # ========================================================
+
     if len(df) > 0:
 
         df["amount"] = (
@@ -838,7 +1029,8 @@ def dashboard_page():
         )
 
         total = (
-            df["amount"].sum()
+            df["amount"]
+            .sum()
         )
 
         count = len(df)
@@ -885,6 +1077,41 @@ def dashboard_page():
 
     st.write("")
 
+
+    # ========================================================
+    # DASHBOARD EDIT FORM
+    # ========================================================
+
+    if (
+        st.session_state.editing_expense
+        is not None
+        and
+        st.session_state.editing_source
+        == "dashboard"
+    ):
+
+        selected = df[
+            df["id"]
+            == int(
+                st.session_state.editing_expense
+            )
+        ]
+
+
+        if len(selected) > 0:
+
+            show_edit_form(
+                selected.iloc[0],
+                "dashboard"
+            )
+
+            st.write("")
+
+
+    # ========================================================
+    # RECENT EXPENSES
+    # ========================================================
+
     st.subheader(
         "🧾 Recent Expenses"
     )
@@ -904,6 +1131,11 @@ def dashboard_page():
         start=1
     ):
 
+        expense_id = int(
+            row["id"]
+        )
+
+
         with st.container(
             border=True
         ):
@@ -912,25 +1144,98 @@ def dashboard_page():
                 f"Expense #{display_id}"
             )
 
+
             st.write(
                 f"💰 **Amount:** "
                 f"₹{float(row['amount']):,.2f}"
             )
+
 
             st.write(
                 f"🏷️ **Category:** "
                 f"{row['category']}"
             )
 
+
             st.write(
                 f"📝 **Description:** "
                 f"{row['description'] or '-'}"
             )
 
+
             st.write(
                 f"📅 **Date:** "
                 f"{row['expense_date']}"
             )
+
+
+            # =================================================
+            # DASHBOARD ACTION BUTTONS
+            # =================================================
+
+            edit_col, delete_col = (
+                st.columns(2)
+            )
+
+
+            with edit_col:
+
+                if st.button(
+                    "✏️ Edit",
+                    width="stretch",
+                    key=(
+                        f"dashboard_edit_"
+                        f"{expense_id}"
+                    )
+                ):
+
+                    st.session_state.editing_expense = (
+                        expense_id
+                    )
+
+                    st.session_state.editing_source = (
+                        "dashboard"
+                    )
+
+                    st.rerun()
+
+
+            with delete_col:
+
+                if st.button(
+                    "🗑️ Delete",
+                    width="stretch",
+                    key=(
+                        f"dashboard_delete_"
+                        f"{expense_id}"
+                    )
+                ):
+
+                    try:
+
+                        delete_expense(
+                            expense_id
+                        )
+
+                        if (
+                            st.session_state.editing_expense
+                            == expense_id
+                        ):
+
+                            st.session_state.editing_expense = None
+                            st.session_state.editing_source = None
+
+                        st.success(
+                            "Expense deleted successfully."
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"Delete failed: {str(e)}"
+                        )
 
 
 # ============================================================
@@ -946,6 +1251,7 @@ def expenses_page():
         unsafe_allow_html=True
     )
 
+
     st.markdown(
         '<div class="subtitle">'
         'Add, edit, delete and search your expenses.'
@@ -958,217 +1264,33 @@ def expenses_page():
     # EDIT FORM
     # ========================================================
 
-    editing_id = (
+    if (
         st.session_state.editing_expense
-    )
-
-
-    if editing_id is not None:
+        is not None
+        and
+        st.session_state.editing_source
+        == "expenses"
+    ):
 
         all_expenses = (
             get_expenses()
         )
 
+
         selected = all_expenses[
             all_expenses["id"]
-            == int(editing_id)
+            == int(
+                st.session_state.editing_expense
+            )
         ]
 
 
         if len(selected) > 0:
 
-            row = selected.iloc[0]
-
-
-            with st.container(
-                border=True
-            ):
-
-                st.subheader(
-                    "✏️ Edit Expense"
-                )
-
-                st.info(
-                    "Change the details and click Save Changes."
-                )
-
-
-                categories = [
-                    "Food",
-                    "Travel",
-                    "Shopping",
-                    "Bills",
-                    "Entertainment",
-                    "Education",
-                    "Health",
-                    "Other"
-                ]
-
-
-                current_category = (
-                    row["category"]
-                )
-
-
-                if (
-                    current_category
-                    in categories
-                ):
-
-                    category_index = (
-                        categories.index(
-                            current_category
-                        )
-                    )
-
-                else:
-
-                    category_index = 0
-
-
-                edit_amount = (
-                    st.number_input(
-                        "Edit Amount",
-                        min_value=0.0,
-                        value=float(
-                            row["amount"]
-                        ),
-                        step=100.0,
-                        format="%.2f",
-                        key=(
-                            f"edit_amount_"
-                            f"{editing_id}"
-                        )
-                    )
-                )
-
-
-                edit_category = (
-                    st.selectbox(
-                        "Edit Category",
-                        categories,
-                        index=category_index,
-                        key=(
-                            f"edit_category_"
-                            f"{editing_id}"
-                        )
-                    )
-                )
-
-
-                edit_description = (
-                    st.text_input(
-                        "Edit Description",
-                        value=(
-                            row["description"]
-                            or ""
-                        ),
-                        key=(
-                            f"edit_description_"
-                            f"{editing_id}"
-                        )
-                    )
-                )
-
-
-                try:
-
-                    current_date = (
-                        datetime.strptime(
-                            str(
-                                row[
-                                    "expense_date"
-                                ]
-                            ),
-                            "%Y-%m-%d"
-                        ).date()
-                    )
-
-                except Exception:
-
-                    current_date = (
-                        datetime.now()
-                        .date()
-                    )
-
-
-                edit_date = (
-                    st.date_input(
-                        "Edit Date",
-                        value=current_date,
-                        key=(
-                            f"edit_date_"
-                            f"{editing_id}"
-                        )
-                    )
-                )
-
-
-                save_col, cancel_col = (
-                    st.columns(2)
-                )
-
-
-                with save_col:
-
-                    if st.button(
-                        "💾 Save Changes",
-                        type="primary",
-                        width="stretch",
-                        key=(
-                            f"save_"
-                            f"{editing_id}"
-                        )
-                    ):
-
-                        if edit_amount <= 0:
-
-                            st.warning(
-                                "Amount must be greater than 0."
-                            )
-
-                        else:
-
-                            try:
-
-                                update_expense(
-                                    editing_id,
-                                    edit_amount,
-                                    edit_category,
-                                    edit_description,
-                                    edit_date
-                                )
-
-                                st.session_state.editing_expense = None
-
-                                st.success(
-                                    "Expense updated successfully."
-                                )
-
-                                st.rerun()
-
-                            except Exception as e:
-
-                                st.error(
-                                    f"Update failed: {str(e)}"
-                                )
-
-
-                with cancel_col:
-
-                    if st.button(
-                        "❌ Cancel",
-                        width="stretch",
-                        key=(
-                            f"cancel_"
-                            f"{editing_id}"
-                        )
-                    ):
-
-                        st.session_state.editing_expense = None
-
-                        st.rerun()
-
+            show_edit_form(
+                selected.iloc[0],
+                "expenses"
+            )
 
             st.write("")
 
@@ -1193,30 +1315,26 @@ def expenses_page():
 
         with col1:
 
-            amount = (
-                st.number_input(
-                    "Amount",
-                    min_value=0.0,
-                    step=100.0,
-                    format="%.2f"
-                )
+            amount = st.number_input(
+                "Amount",
+                min_value=0.0,
+                step=100.0,
+                format="%.2f"
             )
 
 
-            category = (
-                st.selectbox(
-                    "Category",
-                    [
-                        "Food",
-                        "Travel",
-                        "Shopping",
-                        "Bills",
-                        "Entertainment",
-                        "Education",
-                        "Health",
-                        "Other"
-                    ]
-                )
+            category = st.selectbox(
+                "Category",
+                [
+                    "Food",
+                    "Travel",
+                    "Shopping",
+                    "Bills",
+                    "Entertainment",
+                    "Education",
+                    "Health",
+                    "Other"
+                ]
             )
 
 
@@ -1390,20 +1508,24 @@ def expenses_page():
                 f"Expense #{display_id}"
             )
 
+
             st.write(
                 f"💰 **Amount:** "
                 f"₹{float(row['amount']):,.2f}"
             )
+
 
             st.write(
                 f"🏷️ **Category:** "
                 f"{row['category']}"
             )
 
+
             st.write(
                 f"📝 **Description:** "
                 f"{row['description'] or '-'}"
             )
+
 
             st.write(
                 f"📅 **Date:** "
@@ -1422,13 +1544,17 @@ def expenses_page():
                     "✏️ Edit",
                     width="stretch",
                     key=(
-                        f"edit_"
+                        f"expenses_edit_"
                         f"{expense_id}"
                     )
                 ):
 
                     st.session_state.editing_expense = (
                         expense_id
+                    )
+
+                    st.session_state.editing_source = (
+                        "expenses"
                     )
 
                     st.rerun()
@@ -1440,7 +1566,7 @@ def expenses_page():
                     "🗑️ Delete",
                     width="stretch",
                     key=(
-                        f"delete_"
+                        f"expenses_delete_"
                         f"{expense_id}"
                     )
                 ):
@@ -1450,6 +1576,14 @@ def expenses_page():
                         delete_expense(
                             expense_id
                         )
+
+                        if (
+                            st.session_state.editing_expense
+                            == expense_id
+                        ):
+
+                            st.session_state.editing_expense = None
+                            st.session_state.editing_source = None
 
                         st.success(
                             "Expense deleted successfully."
@@ -1476,6 +1610,7 @@ def reports_page():
         '</div>',
         unsafe_allow_html=True
     )
+
 
     st.markdown(
         '<div class="subtitle">'
@@ -1520,6 +1655,10 @@ def reports_page():
 
     count = len(df)
 
+
+    # ========================================================
+    # REPORT METRICS
+    # ========================================================
 
     col1, col2 = (
         st.columns(2)
